@@ -1,22 +1,19 @@
 import random
 import time
+import pygame
 
 from main.Cell import Cell
 from main.GameState import GameState
 import Player
 
 
-def put_flag_action(game_board):
-    row = int(input("Enter row: "))
-    col = int(input("Enter column: "))
+def put_flag_action(game_board, row, col):
     if game_board.validate_coordinates(row, col) and game_board.validate_flag_action(row, col):
         Player.put_flag(game_board, row, col)
         game_board.nb_flags -= 1
 
 
-def remove_flag_action(game_board):
-    row = int(input("Enter row: "))
-    col = int(input("Enter column: "))
+def remove_flag_action(game_board, row, col):
     if game_board.validate_coordinates(row, col):
         Player.remove_flag(game_board, row, col)
         game_board.nb_flags += 1
@@ -38,6 +35,8 @@ class GameBoard:
         self.start_time = 0
         self.end_time = 0
         self.elapsed_time = 0
+        self.screen = None  # Initialize screen later
+        self.cell_size = 40  # Default cell size
 
     def initialize_board(self):
         self.board = [[Cell() for _ in range(self.cols)] for _ in range(self.rows)]
@@ -49,30 +48,6 @@ class GameBoard:
             if not self.board[row][col].is_mine:
                 self.board[row][col].set_mine(True)
                 self.mines_placed += 1
-
-    def place_mines_custom(self):
-        print("Enter the coordinates of the mines (row col), one per line.")
-        mines_to_place = self.mines
-
-        while mines_to_place > 0:
-            print(f"Mines left to place {mines_to_place}: ", end="")
-            input_line = input().strip()
-
-            coordinates = input_line.split()
-            if len(coordinates) == 2:
-                try:
-                    row = int(coordinates[0])
-                    col = int(coordinates[1])
-
-                    if self.is_valid_cell(row, col) and not self.board[row][col].is_mine:
-                        self.board[row][col].set_mine(True)
-                        mines_to_place -= 1
-                    else:
-                        print("Invalid coordinates or mine already placed at this location. Try again.")
-                except ValueError:
-                    print("Invalid input. Please enter valid integers for row and column.")
-            else:
-                print("Invalid input. Please enter coordinates as 'row col'.")
 
     def print_board(self):
         for row in self.board:
@@ -89,28 +64,40 @@ class GameBoard:
                     print("⬛", end=" ")
             print()
 
+    def resize_window(self):
+        min_window_size = 600
+        max_dimension = max(self.rows, self.cols)
+        self.cell_size = max(min_window_size // max_dimension, 40)
+        width = self.cols * self.cell_size
+        height = self.rows * self.cell_size
+        self.screen = pygame.display.set_mode((width, height))
+
     def game_logic(self):
+        self.resize_window()
         while self.state == GameState.PLAYING:
-            print(f"Flags left: {self.nb_flags}")
-            self.print_board()
-            print("What do you want to do?\n 1. Put Flag\n 2. Remove Flag\n 3. Reveal \n 4. Save")
-            action = input()
-            if action == "1":
-                put_flag_action(self)
-            elif action == "2":
-                remove_flag_action(self)
-            elif action == "3":
-                self.reveal_action()
-            else:
-                print("Invalid command")
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.state = GameState.EXIT
+                    pygame.quit()
+                    exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_pos = pygame.mouse.get_pos()
+                    row, col = self.get_cell(mouse_pos)
+                    if pygame.mouse.get_pressed()[0]:  # Left click
+                        self.reveal_action(row, col)
+                    elif pygame.mouse.get_pressed()[2]:  # Right click
+                        put_flag_action(self, row, col)
 
             self.is_lost()
             self.is_won()
 
+            self.screen.fill((0, 0, 0))
+            self.draw_board()
+            pygame.display.flip()
+
         self.end_time = int(time.time() * 1000)
         self.elapsed_time += self.end_time - self.start_time
         print(f"Time elapsed: {self.elapsed_time / 1000} seconds")
-        game_result = (self.state == GameState.WON)
         self.print_board()
         self.state = GameState.MENU
 
@@ -148,10 +135,7 @@ class GameBoard:
             self.reveal_all_board()
             self.state = GameState.WON
 
-    def reveal_action(self):
-        row = int(input("Enter row: "))
-        col = int(input("Enter column: "))
-
+    def reveal_action(self, row, col):
         if self.validate_coordinates(row, col) and self.validate_reveal_action(row, col):
             self.reveal_empty_cells(row, col)
 
@@ -213,5 +197,24 @@ class GameBoard:
                     count = self.count_adjacent_mines(row, col)
                     self.board[row][col].set_adjacent_mines(count)
 
-    def get_cell(self):
-        return self.board
+    def get_cell(self, mouse_pos):
+        row = mouse_pos[1] // self.cell_size
+        col = mouse_pos[0] // self.cell_size
+        return row, col
+
+    def draw_board(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                cell = self.board[row][col]
+                rect = pygame.Rect(col * self.cell_size, row * self.cell_size, self.cell_size, self.cell_size)
+                pygame.draw.rect(self.screen, (200, 200, 200), rect)
+                if cell.is_revealed:
+                    if cell.is_mine:
+                        pygame.draw.circle(self.screen, (255, 0, 0), rect.center, self.cell_size // 4)
+                    else:
+                        font = pygame.font.Font(None, 36)
+                        text = font.render(str(cell.adjacent_mines), True, (0, 0, 0))
+                        text_rect = text.get_rect(center=rect.center)
+                        self.screen.blit(text, text_rect)
+                elif cell.is_flagged:
+                    pygame.draw.rect(self.screen, (255, 255, 0), rect)
