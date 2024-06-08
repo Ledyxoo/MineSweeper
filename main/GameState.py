@@ -7,3 +7,5 @@ class GameState(Enum):
     PLAYING = 3
     LOST = 4
     WON = 5
+    CUSTOM = 6
+    CUSTOM_MINES = 7
