@@ -3,9 +3,8 @@ from enum import Enum
 
 class GameState(Enum):
     MENU = 1
-    EXIT = 2
-    PLAYING = 3
-    LOST = 4
-    WON = 5
-    CUSTOM = 6
-    CUSTOM_MINES = 7
+    PLAYING = 2
+    LOST = 3
+    WON = 4
+    CUSTOM = 5
+    CUSTOM_MINES = 6

@@ -58,9 +58,6 @@ class GameBoard:
         for i in range(1, 9):  # Load images for numbers 1 to 8
             self.images[str(i)] = pygame.image.load(f'images/{i}.png')
 
-    def initialize_board(self):
-        self.board = [[Cell() for _ in range(self.cols)] for _ in range(self.rows)]
-
     def place_mines(self, initial_row, initial_col):
         while self.mines_placed < self.mines:
             row = random.randint(0, self.rows - 1)
@@ -88,7 +85,6 @@ class GameBoard:
         while self.state == GameState.PLAYING:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.state = GameState.EXIT
                     pygame.quit()
                     exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -96,7 +92,6 @@ class GameBoard:
                     row, col = self.get_cell(mouse_pos)
                     if pygame.mouse.get_pressed()[0]:  # Left click
                         if self.first_click:
-                            print("here")
                             self.place_mines(row, col)
                             self.place_numbers()
                             self.first_click = False
@@ -109,8 +104,6 @@ class GameBoard:
 
             self.is_lost()
             self.is_won()
-
-            self.screen.fill((0, 0, 0))
             self.draw_board()
             pygame.display.flip()
 
@@ -119,7 +112,6 @@ class GameBoard:
 
     def customize_mines(self):
         self.resize_window()
-        self.initialize_board()
         self.reveal_all_board()
         while self.mines_placed < self.mines:
             for event in pygame.event.get():
@@ -144,8 +136,6 @@ class GameBoard:
         return self
 
     def start(self):
-        # Initialize the pygame display
-        self.initialize_board()
         self.game_logic()
 
     def start_for_custom(self):

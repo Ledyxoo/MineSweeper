@@ -25,6 +25,3 @@ class Cell:
 
     def set_adjacent_mines(self, adjacent_mines):
         self.adjacent_mines = adjacent_mines
-
-    def get_adjacent_mines(self):
-        return self.adjacent_mines
