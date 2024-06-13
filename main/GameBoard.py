@@ -44,6 +44,7 @@ class GameBoard:
         self.mines_placed = 0
         self.screen = None  # Initialize screen later
         self.cell_size = 40  # Default cell size
+        self.first_click = True  # To track if the first click has been made
 
         # Load images
         self.images = {
@@ -60,13 +61,19 @@ class GameBoard:
     def initialize_board(self):
         self.board = [[Cell() for _ in range(self.cols)] for _ in range(self.rows)]
 
-    def place_mines(self):
+    def place_mines(self, initial_row, initial_col):
         while self.mines_placed < self.mines:
             row = random.randint(0, self.rows - 1)
             col = random.randint(0, self.cols - 1)
-            if not self.board[row][col].is_mine:
-                self.board[row][col].set_mine(True)
-                self.mines_placed += 1
+            # Ensure mines are not placed on the first clicked cell or its adjacent cells*
+            if (row, col) != (initial_row, initial_col) and not self.board[row][col].is_mine:
+                if self.mines > ((65 / 100) * (self.rows * self.cols)) or (self.rows * self.cols) <= 9:
+                    self.board[row][col].set_mine(True)
+                    self.mines_placed += 1
+                else:
+                    if not (initial_row - 1 <= row <= initial_row + 1 and initial_col - 1 <= col <= initial_col + 1):
+                        self.board[row][col].set_mine(True)
+                        self.mines_placed += 1
 
     def resize_window(self):
         min_window_size = 600
@@ -88,6 +95,11 @@ class GameBoard:
                     mouse_pos = pygame.mouse.get_pos()
                     row, col = self.get_cell(mouse_pos)
                     if pygame.mouse.get_pressed()[0]:  # Left click
+                        if self.first_click:
+                            print("here")
+                            self.place_mines(row, col)
+                            self.place_numbers()
+                            self.first_click = False
                         self.reveal_action(row, col)
                     elif pygame.mouse.get_pressed()[2]:  # Right click
                         if self.board[row][col].is_flagged:
@@ -133,8 +145,7 @@ class GameBoard:
 
     def start(self):
         # Initialize the pygame display
-        self.place_mines()
-        self.place_numbers()
+        self.initialize_board()
         self.game_logic()
 
     def start_for_custom(self):
@@ -168,7 +179,7 @@ class GameBoard:
             self.reveal_all_board()
             self.draw_board()
             self.screen.blit(win_text, (self.screen.get_width() // 2 - win_text.get_width() // 2,
-                                        self.screen.get_height() // 2 - win_text.get_height() // 2)) 
+                                        self.screen.get_height() // 2 - win_text.get_height() // 2))
             pygame.display.flip()
             self.state = GameState.WON
             time.sleep(5)

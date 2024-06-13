@@ -196,7 +196,6 @@ while running:
                         game = GameBoard(15, 20, 50)
                         GameBoard.start(game)
                     elif idx == 3:
-                        # Custom option selected, handle accordingly
                         state = GameState.CUSTOM
                     elif idx == 4:
                         state = GameState.CUSTOM_MINES
