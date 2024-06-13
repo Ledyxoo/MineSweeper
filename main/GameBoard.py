@@ -67,7 +67,7 @@ class GameBoard:
             col = random.randint(0, self.cols - 1)
             # Ensure mines are not placed on the first clicked cell or its adjacent cells*
             if (row, col) != (initial_row, initial_col) and not self.board[row][col].is_mine:
-                if self.mines > ((65 / 100) * (self.rows * self.cols)) or (self.rows * self.cols) <= 9:
+                if self.mines > ((68 / 100) * (self.rows * self.cols)) or (self.rows * self.cols) <= 9:
                     self.board[row][col].set_mine(True)
                     self.mines_placed += 1
                 else:
